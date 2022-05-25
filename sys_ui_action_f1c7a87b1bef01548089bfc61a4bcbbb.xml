@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<unload unload_date="2022-05-25 16:13:15">
+<sys_ui_action action="INSERT_OR_UPDATE">
+<action_name>compare_to_previous</action_name>
+<active>true</active>
+<client>true</client>
+<client_script_v2><![CDATA[function onClick(g_form) {
+
+}]]></client_script_v2>
+<comments>This will bypass default update sets!</comments>
+<condition>current.table != 'sys_upgrade_history_log';</condition>
+<form_action>true</form_action>
+<form_button>false</form_button>
+<form_button_v2>false</form_button_v2>
+<form_context_menu>false</form_context_menu>
+<form_link>true</form_link>
+<form_menu_button_v2>false</form_menu_button_v2>
+<form_style/>
+<hint/>
+<isolate_script>true</isolate_script>
+<list_action>true</list_action>
+<list_banner_button>false</list_banner_button>
+<list_button>false</list_button>
+<list_choice>false</list_choice>
+<list_context_menu>true</list_context_menu>
+<list_link>false</list_link>
+<list_save_with_form_button>false</list_save_with_form_button>
+<list_style/>
+<messages/>
+<name>Compare to Previous Update Set</name>
+<onclick>compareToPrevious();</onclick>
+<order>110</order>
+<script><![CDATA[var defaults = [];
+
+function compareToPrevious() {
+	var gr = new GlideRecord('sys_update_set');
+	gr.addQuery('name', 'Default');
+	gr.query(getDefaults);    		
+}
+
+function getDefaults(gr){   
+	while (gr.next()) {
+		defaults.push(gr.sys_id + '');        
+	}
+	var grVer = new GlideRecord('sys_update_version');
+	grVer.addQuery('name', g_form.getValue('name'));
+	//grVer.addQuery('source', '!=', g_form.getValue('update_set'));
+	grVer.addQuery('source', 'NOT IN', g_form.getValue('update_set') + ',' + defaults);
+	grVer.addQuery('state', 'previous');
+	grVer.orderByDesc('sys_created_on');
+	grVer.query(callBack);
+}
+
+function callBack(gr){
+	if (gr.next()){	
+		ScriptLoader.getScripts('/script/RecordPayloadUtil.js', function() {
+			var ga0 = new GlideAjax('DiffMergeUICheck');
+			ga0.addParam('sysparm_name', 'isUISupported');
+			ga0.getXMLAnswer(function(isUISupported) {
+				if (isUISupported !== 'true') {
+					g_form.addErrorMessage('Sorry this UI is not supported!');
+				} else {
+					var url = new GlideURL("merge_form_current_version.do");
+					url.addParam("sysparm_version_id", gr.sys_id + '');
+					//url.addParam("sysparm_referring_url", returnUrl);
+					top.window.location = url.getURL();
+				}
+			});
+		});
+	} else {
+		g_form.addInfoMessage('Previous non default version not found!'); 
+	}
+}
+
+function comparisonDialog(answer) {
+	var dialog = new GlideModal('', false, 'modal-95');
+	dialog.setTitle('Conflict Comparison');
+	dialog.renderWithContent('<div style="min-width: 400px; overflow-x: auto;">' + answer + '</div>');
+}]]></script>
+<show_insert>true</show_insert>
+<show_multiple_update>false</show_multiple_update>
+<show_query>false</show_query>
+<show_update>true</show_update>
+<sys_class_name>sys_ui_action</sys_class_name>
+<sys_created_by>mrakowski</sys_created_by>
+<sys_created_on>2022-05-25 13:53:50</sys_created_on>
+<sys_customer_update>false</sys_customer_update>
+<sys_domain>global</sys_domain>
+<sys_id>f1c7a87b1bef01548089bfc61a4bcbbb</sys_id>
+<sys_mod_count>37</sys_mod_count>
+<sys_name>Compare to Previous Update Set</sys_name>
+<sys_overrides display_value=""/>
+<sys_package display_value="Global" source="global">global</sys_package>
+<sys_policy/>
+<sys_replace_on_upgrade>false</sys_replace_on_upgrade>
+<sys_scope display_value="Global">global</sys_scope>
+<sys_update_name>sys_ui_action_f1c7a87b1bef01548089bfc61a4bcbbb</sys_update_name>
+<sys_updated_by>mrakowski</sys_updated_by>
+<sys_updated_on>2022-05-25 16:05:38</sys_updated_on>
+<table>sys_update_xml</table>
+<ui11_compatible>true</ui11_compatible>
+<ui16_compatible>true</ui16_compatible>
+</sys_ui_action>
+</unload>
